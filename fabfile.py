@@ -37,13 +37,14 @@ def install():
     # add jenkins user to docker group to use docker in Jenkins
     sudo('gpasswd -a jenkins docker')
 
+    # install plugins
+    for plugin, version in plugins:
+        _install_jenkins_plugin(plugin, version)
+
     # copy test helper script
     put('run_test', '/tmp')
     sudo('mv /tmp/run_test /usr/local/bin/.')
     sudo('chmod +x /usr/local/bin/run_test')
-
-    for plugin, version in plugins:
-        _install_jenkins_plugin(plugin, version)
 
     # make data directory
     sudo('mkdir -p /data')
