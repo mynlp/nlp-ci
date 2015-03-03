@@ -15,6 +15,9 @@ if __name__ == '__main__':
     test = args.test
     host_cwd = os.getcwd()
 
+    work_dir = '/work'
+    data_dir = '/data'
+
     # Make an image
     res = call(['docker', 'build', '-t', name, '.'])
     if res != 0:
@@ -26,8 +29,9 @@ if __name__ == '__main__':
     # Run test
     res = call(['docker', 'run',
                 '--rm',
-                '-v', '%s:/work' % host_cwd,
-                '-w', '/work',
+                '-v', '%s:%s' % (host_cwd, work_dir),
+                '-v', '%s:%s:ro' % (data_dir, data_dir),
+                '-w', word_dir,
                 name,
                 test])
     if res != 0:
@@ -38,8 +42,8 @@ if __name__ == '__main__':
     # chown for clean up
     res = call(['docker', 'run',
                 '--rm',
-                '-v', '%s:/work' % host_cwd,
-                '-w', '/work',
+                '-v', '%s:%s' % (host_cwd, work_dir),
+                '-w', work_dir,
                 name,
                 '/bin/bash', '-c',
                 'chown `stat -c %u .`:`stat -c %g .` -R .'])
