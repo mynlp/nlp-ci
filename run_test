@@ -31,7 +31,7 @@ if __name__ == '__main__':
                 '--rm',
                 '-v', '%s:%s' % (host_cwd, work_dir),
                 '-v', '%s:%s:ro' % (data_dir, data_dir),
-                '-w', word_dir,
+                '-w', work_dir,
                 name,
                 test])
     if res != 0:
