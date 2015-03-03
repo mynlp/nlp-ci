@@ -44,3 +44,6 @@ def install():
 
     for plugin, version in plugins:
         _install_jenkins_plugin(plugin, version)
+
+    # make data directory
+    sudo('mkdir -p /data')
