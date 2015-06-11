@@ -10,6 +10,7 @@ plugins = [
     ('git', 'latest'),
     ('ansicolor', 'latest'),
     ('multiple-scms', 'latest'),
+    ('plot', 'latest'),
 ]
 
 
