@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+
+import argparse
+import os
+import subprocess
+import sys
+
+
+def get_workspace(args):
+    if args.workspace is not None:
+        return args.workspace
+    elif 'WORKSPACE' in os.environ:
+        return os.environ['WORKSPACE']
+    else:
+        return '.'
+
+def get_comp_dir(args):
+    if args.compare == 'stable':
+        return 'lastStable'
+    elif args.compare == 'successful':
+        return 'lastSuccessful'
+    else:
+        assert(False)
+    
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='helper script to run diff in jenkins')
+    parser.add_argument('--diff', type=str, default='diff',
+                        help='diff command')
+    parser.add_argument('--compare', choices=['stable', 'successful'], default='stable',
+                        help='type of result to compare. ("stable" or "successful")')
+    parser.add_argument('--workspace', type=str,
+                        help='workspace of jenkins. if not set, use "WORKSPACE" environment variable.')
+    parser.add_argument('path', metavar='PATH')
+    args = parser.parse_args()
+
+    path = args.path
+    workspace = get_workspace(args)
+    comp = get_comp_dir(args)
+
+    prev = '{0:s}/../{1:s}/archive/{2:s}'.format(workspace, comp, path)
+    if not os.path.exists(prev):
+        sys.stderr.write('previous result is not found: {0:s}\n'.format(prev))
+        sys.exit(0)
+
+    subprocess.check_call('{0:s} {1:s} {2:s}'.format(args.diff, prev, path), shell=True)

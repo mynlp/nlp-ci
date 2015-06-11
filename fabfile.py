@@ -42,10 +42,17 @@ def install():
     for plugin, version in plugins:
         _install_jenkins_plugin(plugin, version)
 
+    # restart jenkins
+    sudo('service jenkins restart')
+
     # copy test helper script
     put('run_test', '/tmp')
     sudo('mv /tmp/run_test /usr/local/bin/.')
     sudo('chmod +x /usr/local/bin/run_test')
+
+    put('run_diff', '/tmp')
+    sudo('mv /tmp/run_diff /usr/local/bin/.')
+    sudo('chmod +x /usr/local/bin/run_diff')
 
     # make data directory
     sudo('mkdir -p /data')
