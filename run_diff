@@ -43,4 +43,4 @@ if __name__ == '__main__':
         sys.stderr.write('previous result is not found: {0:s}\n'.format(prev))
         sys.exit(0)
 
-    subprocess.check_call('{0:s} {1:s} {2:s}'.format(args.diff, prev, path), shell=True)
+    subprocess.check_call('{0:s} {1:s} {2:s}'.format(args.diff, path, prev), shell=True)
