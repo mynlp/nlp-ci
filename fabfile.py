@@ -11,8 +11,8 @@ plugins = [
     ('ansicolor', 'latest'),
     ('multiple-scms', 'latest'),
     ('plot', 'latest'),
-	('github-oauth','latest'),
-	('role-stragety','latest'),
+    ('github-oauth','latest'),
+    ('role-strategy','latest'),
 ]
 
 # Setting apache
