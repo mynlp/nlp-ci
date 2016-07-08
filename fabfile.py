@@ -11,13 +11,21 @@ plugins = [
     ('ansicolor', 'latest'),
     ('multiple-scms', 'latest'),
     ('plot', 'latest'),
-		('github-oauth','latest'),
-		('role-stragety','latest'),
+	('github-oauth','latest'),
+	('role-stragety','latest'),
 ]
 
 # Setting apache
-def _setup_apache2(sslPath):
-	print(sslPath)
+def _setup_apache2():
+   sudo('apt-get -y -q install apache2')
+   sudo('apache2ctl stop')
+   sudo('sed -e \'/Listen/s/^/# /\' -i /etc/apache2/port.conf')
+   sudo('a2enmod ssl')
+   sudo('a2ensite default-ssl')
+   sudo('a2enmod proxy')
+   sudo('a2enmod proxy_http')
+   sudo('a2enmod vhost_alias')
+   sudo('apache2ctl start')
 
 def _install_jenkins_plugin(name, version):
     sudo('wget -nv -P /var/lib/jenkins/plugins http://updates.jenkins-ci.org/download/plugins/%s/%s/%s.hpi' % (name, version, name))
@@ -28,7 +36,7 @@ def install():
     sudo('echo Asia/Tokyo > /etc/timezone')
     sudo('dpkg-reconfigure --frontend noninteractive tzdata')
 
-    # install jenins
+    # install jenkins
     sudo('apt-get -q update')
     sudo('apt-get install -y -q openjdk-7-jre wget docker.io')
     run('wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add -')
@@ -47,8 +55,8 @@ def install():
     for plugin, version in plugins:
         _install_jenkins_plugin(plugin, version)
 
-		# add prefix option
-		sudo('sed -e \'/JENKINS_ARGS/s/="/=" --prefix\/jenkins /\' -i /etc/default/jenkins')
+	# add prefix option
+	sudo('sed -e \'/JENKINS_ARGS/s/="/=" --prefix\/jenkins /\' -i /etc/default/jenkins')
 
     # restart jenkins
     sudo('service jenkins restart')
@@ -64,3 +72,6 @@ def install():
 
     # make data directory
     sudo('mkdir -p /data')
+
+    # install apache2
+    _setup_apache2()
