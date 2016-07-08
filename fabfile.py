@@ -11,8 +11,13 @@ plugins = [
     ('ansicolor', 'latest'),
     ('multiple-scms', 'latest'),
     ('plot', 'latest'),
+		('github-oauth','latest'),
+		('role-stragety','latest'),
 ]
 
+# Setting apache
+def _setup_apache2(sslPath):
+	print(sslPath)
 
 def _install_jenkins_plugin(name, version):
     sudo('wget -nv -P /var/lib/jenkins/plugins http://updates.jenkins-ci.org/download/plugins/%s/%s/%s.hpi' % (name, version, name))
@@ -41,6 +46,9 @@ def install():
     # install plugins
     for plugin, version in plugins:
         _install_jenkins_plugin(plugin, version)
+
+		# add prefix option
+		sudo('sed -e \'/JENKINS_ARGS/s/="/=" --prefix\/jenkins /\' -i /etc/default/jenkins')
 
     # restart jenkins
     sudo('service jenkins restart')
