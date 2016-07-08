@@ -55,8 +55,8 @@ def install():
     for plugin, version in plugins:
         _install_jenkins_plugin(plugin, version)
 
-	# add prefix option
-	sudo('sed -e \'/JENKINS_ARGS/s/="/=" --prefix\/jenkins /\' -i /etc/default/jenkins')
+    # add prefix option
+    sudo('sed -e \'/JENKINS_ARGS/s/="/=" --prefix=\/jenkins/\' -i /etc/default/jenkins')
 
     # restart jenkins
     sudo('service jenkins restart')
