@@ -5,17 +5,17 @@ from fabric.contrib.files import exists
 
 # Jenkins plugins to install
 plugins = [
-    ('scm-api', 'latest'),
-    ('git-client', 'latest'),
-    ('git', 'latest'),
-    ('ansicolor', 'latest'),
-    ('multiple-scms', 'latest'),
-    ('plot', 'latest'),
-    ('github-oauth','latest'),
-    ('role-strategy','latest'),
+    'scm-api',
+    'git-client',
+    'git',
+    'ansicolor',
+    'multiple-scms',
+    'plot',
+    'github-oauth',
+    'role-strategy',
 ]
 
-# Setting apache
+# setting apache
 def _setup_apache2(address):
    sudo('apt-get -y -q install apache2')
    sudo('sed -e \'/Listen 80/s/^/# /\' -i /etc/apache2/ports.conf')
@@ -30,8 +30,19 @@ def _setup_apache2(address):
    sudo('mv /tmp/default-ssl.conf /etc/apache2/sites-available/default-ssl.conf')
    sudo('apache2ctl restart')
 
-def _install_jenkins_plugin(name, version):
-    sudo('wget -nv -P /var/lib/jenkins/plugins http://updates.jenkins-ci.org/download/plugins/%s/%s/%s.hpi' % (name, version, name))
+def _install_jenkins_plugin(name, address):
+    sudo('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s//jenkins install-plugin %s' % (address, name))
+
+def _check_jenkins_cli_status(address):
+    with warn_only():
+        with hide('everything'):
+            while 1:
+                result = sudo('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s/jenkins help' % address)
+                if result.return_code != 0:
+                    print 'Waiting for Jenkins-cli to start ...'
+                    sleep(1)
+                else:
+                    break
 
 def install():
     # setup timezone
@@ -52,16 +63,13 @@ def install():
     sudo('apt-get -q update')
     sudo('apt-get -y -q install jenkins')
 
-    while not exists('/var/lib/jenkins/plugins'):
-        print 'Waiting for Jenkins to start...'
-        sleep(1)
-
     # add jenkins user to docker group to use docker in Jenkins
     sudo('gpasswd -a jenkins docker')
 
-    # install plugins
-    for plugin, version in plugins:
-        _install_jenkins_plugin(plugin, version)
+    # waiting jenkins to start
+    while not exists('/var/lib/jenkins/config.xml'):
+        print 'Waiting for Jenkins to start...'
+        sleep(1)
 
     # add prefix option
     sudo('sed -e \'/JENKINS_ARGS/s/="/="--prefix=\/jenkins /\' -i /etc/default/jenkins')
@@ -69,8 +77,7 @@ def install():
     # Skip `unlock Jenkins`
     sudo('sed -e \'/JAVA_ARGS/s/="/="-Djenkins.install.runSetupWizard=false /\' -i /etc/default/jenkins')
 
-
-    # edit configuration fow allowing anonymous to read
+    # edit configuration fow allowing anonymous to read jenkins configuration
     put('edit_jenkins_config','/tmp')
     sudo('mv /tmp/edit_jenkins_config /usr/local/bin/.')
     sudo('chmod +x /usr/local/bin/edit_jenkins_config')
@@ -82,8 +89,8 @@ def install():
     sudo('service jenkins restart')
 
     # download jenkins-cli
-    with hide('everything'):
-        with warn_only():
+    with warn_only():
+        with hide('everything'):
             while 1:
                 result = sudo('wget -nv --no-check-certificate -P /tmp/ https://%s/jenkins/jnlpJars/jenkins-cli.jar' % address)
                 if result.return_code != 0:
@@ -93,13 +100,19 @@ def install():
                     break
 
     # add admin user
+    _check_jenkins_cli_status(address)
     sudo('echo \'jenkins.model.Jenkins.instance.securityRealm.createAccount("admin","admin") \' \
     | java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s/jenkins groovy =' % address)
+
+    # install plugins
+    _check_jenkins_cli_status(address)
+    sudo('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s//jenkins install-plugin %s' % (address,' '.join(plugins)))
 
     # deny access as anonymous
     sudo('/usr/local/bin/edit_jenkins_config /var/lib/jenkins/config.xml')
 
     # reload configuration
+    _check_jenkins_cli_status(address)
     sudo('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s/jenkins reload-configuration' % address)
 
     # copy test helper script
@@ -113,3 +126,6 @@ def install():
 
     # make data directory
     sudo('mkdir -p /data')
+
+    # restart jenkins
+    sudo('service jenkins restart')
