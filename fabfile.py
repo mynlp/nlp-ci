@@ -1,6 +1,6 @@
 from time import sleep
 
-from fabric.api import put, run, sudo
+from fabric.api import put, run, sudo, warn_only, hide
 from fabric.contrib.files import exists
 
 # Jenkins plugins to install
@@ -69,24 +69,38 @@ def install():
     # Skip `unlock Jenkins`
     sudo('sed -e \'/JAVA_ARGS/s/="/="-Djenkins.install.runSetupWizard=false /\' -i /etc/default/jenkins')
 
-    # restart jenkins
-    sudo('service jenkins restart')
 
-    sleep(10)
-
-    # Add admin user
-    sudo('wget -nv --no-check-certificate -P /tmp/ https://%s/jenkins/jnlpJars/jenkins-cli.jar ' % address)
-
+    # edit configuration fow allowing anonymous to read
     put('edit_jenkins_config','/tmp')
     sudo('mv /tmp/edit_jenkins_config /usr/local/bin/.')
     sudo('chmod +x /usr/local/bin/edit_jenkins_config')
 
+    # allow access as anonymous
     sudo('/usr/local/bin/edit_jenkins_config --allowAnonymous /var/lib/jenkins/config.xml')
 
+    # restart jenkins
+    sudo('service jenkins restart')
+
+    # download jenkins-cli
+    with hide('everything'):
+        with warn_only():
+            while 1:
+                result = sudo('wget -nv --no-check-certificate -P /tmp/ https://%s/jenkins/jnlpJars/jenkins-cli.jar' % address)
+                if result.return_code != 0:
+                    print 'Waiting for Jenkins to restart ...'
+                    sleep(1)
+                else:
+                    break
+
+    # add admin user
     sudo('echo \'jenkins.model.Jenkins.instance.securityRealm.createAccount("admin","admin") \' \
     | java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s/jenkins groovy =' % address)
 
+    # deny access as anonymous
     sudo('/usr/local/bin/edit_jenkins_config /var/lib/jenkins/config.xml')
+
+    # reload configuration
+    sudo('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s/jenkins reload-configuration' % address)
 
     # copy test helper script
     put('run_test', '/tmp')
@@ -99,6 +113,3 @@ def install():
 
     # make data directory
     sudo('mkdir -p /data')
-
-    # restart jenkins
-    sudo('service jenkins restart')
