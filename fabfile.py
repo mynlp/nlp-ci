@@ -36,17 +36,18 @@ def _install_jenkins_plugin(name, address):
 def _send_jenkins_cli_command(command, iterate = 100):
     count = 0
     with warn_only():
+        sudo(command)
         with hide('everything'):
             while count < iterate:
                 result = sudo(command)
                 if result.return_code != 0:
-                    print 'Waiting for Jenkins-cli to start ...'
+                    print 'Waiting for Jenkins-cli\'s response ...'
                     count += 1
                     sleep(1)
                 else:
                     break
 
-def install():
+def install(username='admin', password='admin', domain=None, sslpath=None):
     # setup timezone
     sudo('echo Asia/Tokyo > /etc/timezone')
     sudo('dpkg-reconfigure --frontend noninteractive tzdata')
@@ -54,7 +55,11 @@ def install():
     # install apache2
     sudo('echo "export LANG=C" > /etc/profile')
     output = run('ifconfig eth0 | grep "inet addr:" | cut -d: -f2')
-    address = output.split(' ')[0].strip()
+    if domain is None:
+        address = output.split(' ')[0].strip()
+    else:
+        address = domain
+
     _setup_apache2(address)
 
     # install jenkins
@@ -102,8 +107,8 @@ def install():
                     break
 
     # add admin user
-    _send_jenkins_cli_command('echo \'jenkins.model.Jenkins.instance.securityRealm.createAccount("admin","admin") \' \
-    | java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s/jenkins groovy =' % address)
+    _send_jenkins_cli_command('echo \'jenkins.model.Jenkins.instance.securityRealm.createAccount("%s","%s") \' \
+    | java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s/jenkins groovy =' % (username, password, address))
 
     # install plugins
     _send_jenkins_cli_command('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s//jenkins install-plugin %s' % (address,' '.join(plugins)))
@@ -128,3 +133,6 @@ def install():
 
     # restart jenkins
     sudo('service jenkins restart')
+
+def createjobs():
+    filename = './joblist.json'

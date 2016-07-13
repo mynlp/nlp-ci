@@ -1,0 +1,14 @@
+{
+  "jigg":{
+    "project":{
+      "name":"jigg-test",
+      "repository":"https://github.com/mynlp/jigg-test.git"
+    },
+    "testProjects":[
+      {
+        "repository":"https://github.com/mynlp/jigg.git",
+        "branch":"develop"
+      }
+    ]
+  }
+}
