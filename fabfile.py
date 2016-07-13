@@ -33,13 +33,15 @@ def _setup_apache2(address):
 def _install_jenkins_plugin(name, address):
     sudo('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s//jenkins install-plugin %s' % (address, name))
 
-def _check_jenkins_cli_status(address):
+def _send_jenkins_cli_command(command, iterate = 100):
+    count = 0
     with warn_only():
         with hide('everything'):
-            while 1:
-                result = sudo('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s/jenkins help' % address)
+            while count < iterate:
+                result = sudo(command)
                 if result.return_code != 0:
                     print 'Waiting for Jenkins-cli to start ...'
+                    count += 1
                     sleep(1)
                 else:
                     break
@@ -100,20 +102,17 @@ def install():
                     break
 
     # add admin user
-    _check_jenkins_cli_status(address)
-    sudo('echo \'jenkins.model.Jenkins.instance.securityRealm.createAccount("admin","admin") \' \
+    _send_jenkins_cli_command('echo \'jenkins.model.Jenkins.instance.securityRealm.createAccount("admin","admin") \' \
     | java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s/jenkins groovy =' % address)
 
     # install plugins
-    _check_jenkins_cli_status(address)
-    sudo('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s//jenkins install-plugin %s' % (address,' '.join(plugins)))
+    _send_jenkins_cli_command('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s//jenkins install-plugin %s' % (address,' '.join(plugins)))
 
     # deny access as anonymous
     sudo('/usr/local/bin/edit_jenkins_config /var/lib/jenkins/config.xml')
 
     # reload configuration
-    _check_jenkins_cli_status(address)
-    sudo('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s/jenkins reload-configuration' % address)
+    _send_jenkins_cli_command('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s/jenkins reload-configuration' % address)
 
     # copy test helper script
     put('run_test', '/tmp')
