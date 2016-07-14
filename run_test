@@ -14,9 +14,11 @@ if __name__ == '__main__':
     name = args.name
     test = args.test
     host_cwd = os.getcwd()
+    host_usr_bin = '/usr/local/bin'
 
     work_dir = '/work'
     data_dir = '/data'
+    bin_dir = '/bin'
 
     # Make an image
     res = call(['docker', 'build', '-t', name, '.'])
@@ -31,6 +33,7 @@ if __name__ == '__main__':
                 '--rm',
                 '-v', '%s:%s' % (host_cwd, work_dir),
                 '-v', '%s:%s:ro' % (data_dir, data_dir),
+                '-v', '%s:%s:ro' % (host_usr_bin, bin_dir),
                 '-w', work_dir,
                 name,
                 test])

@@ -1,6 +1,6 @@
 from time import sleep
 
-from fabric.api import put, run, sudo, warn_only, hide
+from fabric.api import put, run, sudo, warn_only, hide, cd
 from fabric.contrib.files import exists
 
 # Jenkins plugins to install
@@ -62,9 +62,11 @@ def install(username='admin', password='admin', domain=None, sslpath=None):
 
     _setup_apache2(address)
 
-    # install jenkins
+    # install required packages
     sudo('apt-get -q update')
-    sudo('apt-get install -y -q openjdk-7-jre wget docker.io')
+    sudo('apt-get install -y -q openjdk-7-jre openjdk-7-jdk wget docker.io git maven')
+
+    # install jenkins
     run('wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add -')
     sudo('sh -c \'echo deb http://pkg.jenkins-ci.org/debian binary/ > /etc/apt/sources.list.d/jenkins.list\'')
     sudo('apt-get -q update')
@@ -119,6 +121,9 @@ def install(username='admin', password='admin', domain=None, sslpath=None):
     # reload configuration
     _send_jenkins_cli_command('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s/jenkins reload-configuration' % address)
 
+    # restart jenkins
+    sudo('service jenkins restart')
+
     # copy test helper script
     put('run_test', '/tmp')
     sudo('mv /tmp/run_test /usr/local/bin/.')
@@ -128,11 +133,23 @@ def install(username='admin', password='admin', domain=None, sslpath=None):
     sudo('mv /tmp/run_diff /usr/local/bin/.')
     sudo('chmod +x /usr/local/bin/run_diff')
 
+    # copy whatswrong_command, which is a helper tool to compare files using whatswrong
+    sudo('git clone https:github.com/mynlp/whatswrong_command.git /tmp/whatswrong_command')
+    cd('/tmp/whatswrong_command')
+    sudo('mvn assembly:assembly')
+    sudo('mv ./target/*.jar /usr/local/bin/.')
+
     # make data directory
     sudo('mkdir -p /data')
 
-    # restart jenkins
-    sudo('service jenkins restart')
+def createjobs(username='admin', password='admin'):
+    joblist = open('./joblist.json','r')
+    data = json.load(joblist)
+    joblist.close()
 
-def createjobs():
-    filename = './joblist.json'
+    for elem in data:
+        print 'title: ' + elem['.title']
+        print 'base-project: ' + elem['.contents']['base-project']
+        for content in elem['.contents']['test-projects']:
+            print 'test-project: ' + content['repository']
+            print 'branch : ' + content['branch']
