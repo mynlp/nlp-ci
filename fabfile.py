@@ -20,18 +20,19 @@ plugins = [
 
 # setting apache
 def _setup_apache2(address):
-   sudo('apt-get -y -q install apache2')
-   sudo('sed -e \'/Listen 80/s/^/# /\' -i /etc/apache2/ports.conf')
-   sudo('a2enmod ssl')
-   sudo('a2ensite default-ssl')
-   sudo('a2enmod proxy')
-   sudo('a2enmod proxy_http')
-   sudo('a2enmod vhost_alias')
-   put('default-ssl.conf','/tmp')
-   sudo('sed -e "/{ADDRESS}/s/{ADDRESS}/%s/" -i /tmp/default-ssl.conf' % address)
-   sudo('mv /etc/apache2/sites-available/default-ssl.conf /etc/apache2/sites-available-ssl.conf.backup')
-   sudo('mv /tmp/default-ssl.conf /etc/apache2/sites-available/default-ssl.conf')
-   sudo('apache2ctl restart')
+    sudo('apt-get -q update')
+    sudo('apt-get -y -q install apache2')
+    sudo('sed -e \'/Listen 80/s/^/# /\' -i /etc/apache2/ports.conf')
+    sudo('a2enmod ssl')
+    sudo('a2ensite default-ssl')
+    sudo('a2enmod proxy')
+    sudo('a2enmod proxy_http')
+    sudo('a2enmod vhost_alias')
+    put('default-ssl.conf','/tmp')
+    sudo('sed -e "/{ADDRESS}/s/{ADDRESS}/%s/" -i /tmp/default-ssl.conf' % address)
+    sudo('mv /etc/apache2/sites-available/default-ssl.conf /etc/apache2/sites-available-ssl.conf.backup')
+    sudo('mv /tmp/default-ssl.conf /etc/apache2/sites-available/default-ssl.conf')
+    sudo('apache2ctl restart')
 
 def _install_jenkins_plugin(name, address):
     sudo('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s//jenkins install-plugin %s' % (address, name))
@@ -39,9 +40,9 @@ def _install_jenkins_plugin(name, address):
 def _send_jenkins_cli_command(command, iterate = 100):
     count = 0
     with warn_only():
-        sudo(command)
+        resuolt = sudo(command)
         with hide('everything'):
-            while count < iterate:
+            while count < iterate and result.return_code != 0:
                 result = sudo(command)
                 if result.return_code != 0:
                     print 'Waiting for Jenkins-cli\'s response ...'
@@ -134,7 +135,7 @@ def install(username='admin', password='admin', domain=None, sslpath=None):
     sudo('chmod +x /usr/local/bin/run_diff')
 
     # copy whatswrong_command, which is a helper tool to compare files using whatswrong
-    sudo('git clone https:github.com/mynlp/whatswrong_command.git /tmp/whatswrong_command')
+    sudo('git clone https://github.com/mynlp/whatswrong_command.git /tmp/whatswrong_command')
     cd('/tmp/whatswrong_command')
     sudo('mvn assembly:assembly')
     sudo('mv ./target/*.jar /usr/local/bin/.')
@@ -168,15 +169,15 @@ def createjobs(username='admin', password='admin', domain=None):
 
         jobxmlnode.clear()
 
-        basenode.file('.//url').text = elem['.contents']['base-project']['repository']
-        basenode.file('.//name').text = '*/' + elem['.contents']['base-project']['branch']
+        basenode.find('.//url').text = elem['.contents']['base-project']['repository']
+        basenode.find('.//name').text = '*/' + elem['.contents']['base-project']['branch']
 
         jobxmlnode.append(basenode)
 
         for subelem in elem['.contents']['test-projects']:
             testnode.find('.//url').text = subelem['repository']
             testnode.find('.//name').text = '*/' + subelem['branch']
-            testnode.find('//relativeTargetDir').text = title + '-' + subelem['branch']
+            testnode.find('.//relativeTargetDir').text = title + '-' + subelem['branch']
 
         jobxml.write('./xml/%s.xml' % title, encoding='UTF-8')
 
