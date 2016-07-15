@@ -121,9 +121,6 @@ def install(username='admin', password='admin', domain=None, sslpath=None):
     # deny access as anonymous
     sudo('/usr/local/bin/edit_jenkins_config /var/lib/jenkins/config.xml')
 
-    # reload configuration
-    _send_jenkins_cli_command('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s/jenkins reload-configuration' % address)
-
     # restart jenkins
     sudo('service jenkins restart')
 
