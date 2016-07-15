@@ -3,6 +3,9 @@ from time import sleep
 from fabric.api import put, run, sudo, warn_only, hide, cd
 from fabric.contrib.files import exists
 
+import xml.etree.ElementTree as ET
+import json
+
 # Jenkins plugins to install
 plugins = [
     'scm-api',
@@ -53,9 +56,9 @@ def install(username='admin', password='admin', domain=None, sslpath=None):
     sudo('dpkg-reconfigure --frontend noninteractive tzdata')
 
     # install apache2
-    sudo('echo "export LANG=C" > /etc/profile')
-    output = run('ifconfig eth0 | grep "inet addr:" | cut -d: -f2')
     if domain is None:
+        sudo('echo "export LANG=C" > /etc/profile')
+        output = run('ifconfig eth0 | grep "inet addr:" | cut -d: -f2')
         address = output.split(' ')[0].strip()
     else:
         address = domain
@@ -142,14 +145,50 @@ def install(username='admin', password='admin', domain=None, sslpath=None):
     # make data directory
     sudo('mkdir -p /data')
 
-def createjobs(username='admin', password='admin'):
-    joblist = open('./joblist.json','r')
-    data = json.load(joblist)
-    joblist.close()
+def createjobs(username='admin', password='admin', domain=None):
 
-    for elem in data:
-        print 'title: ' + elem['.title']
-        print 'base-project: ' + elem['.contents']['base-project']
-        for content in elem['.contents']['test-projects']:
-            print 'test-project: ' + content['repository']
-            print 'branch : ' + content['branch']
+    if domain is None:
+        sudo('echo "export LANG=C" > /etc/profile')
+        output = run('ifconfig eth0 | grep "inet addr:" | cut -d: -f2')
+        address = output.split(' ')[0].strip()
+    else:
+        address = domain
+
+    f = open('./joblist.json')
+    joblist = json.load(f)
+    f.close()
+
+    jobxml = ET.parse('./job-template.xml')
+    jobxmlroot = jobxml.getroot()
+    jobxmlnode = jobxmlroot.find('.//scms')
+
+    nodetemplate = ET.parse('./node-template.xml')
+    basenode = nodetemplate.findall('.//hudson.plugins.git.GitSCM')[0]
+    testnode = nodetemplate.findall('.//hudson.plugins.git.GitSCM')[1]
+
+    for elem in joblist:
+        title = elem['.title']
+
+        jobxmlnode.clear()
+
+        basenode.file('.//url').text = elem['.contents']['base-project']['repository']
+        basenode.file('.//name').text = '*/' + elem['.contents']['base-project']['branch']
+
+        jobxmlnode.append(basenode)
+
+        for subelem in elem['.contents']['test-projects']:
+            testnode.find('.//url').text = subelem['repository']
+            testnode.find('.//name').text = '*/' + subelem['branch']
+            testnode.find('//relativeTargetDir').text = title + '-' + subelem['branch']
+
+        jobxml.write('./xml/%s.xml' % title, encoding='UTF-8')
+
+        # create job
+        put('./xml/%s.xml' % title, '/tmp/')
+        _send_jenkins_cli_command(
+            'cat /tmp/%s.xml | \
+            java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s/jenkins \
+            create-job %s \
+            --username %s \
+            --password %s' % \
+            (title, address, title, username, password))

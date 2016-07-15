@@ -2,7 +2,10 @@
   {
     ".title":"jigg",
     ".contents":{
-      "base-project":"https://github.com/mynlp/jigg-test.git",
+      "base-project": {
+        "repository":"https://github.com/mynlp/jigg-test.git",
+        "branch":"master"
+      },
       "test-projects":[
         {
           "repository":"https://github.com/mynlp/jigg.git",

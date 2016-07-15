@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+<!-- base project node -->
+<hudson.plugins.git.GitSCM plugin="git@2.4.4">
+	<configVersion>2</configVersion>
+	<userRemoteConfigs>
+		<hudson.plugins.git.UserRemoteConfig>
+			<url>{BASEPROJECT_REPOSITORY}</url>
+		</hudson.plugins.git.UserRemoteConfig>
+	</userRemoteConfigs>
+	<branches>
+		<hudson.plugins.git.BranchSpec>
+			<name>*/{BASEPROJECT_BRANCH}</name>
+		</hudson.plugins.git.BranchSpec>
+	</branches>
+	<doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+	<submoduleCfg class="list"/>
+	<extensions>
+		<hudson.plugins.git.extensions.impl.WipeWorkspace/>
+	</extensions>
+</hudson.plugins.git.GitSCM>
+<!-- test project nodes -->
+<hudson.plugins.git.GitSCM plugin="git@2.4.4">
+	<configVersion>2</configVersion>
+	<userRemoteConfigs>
+		<hudson.plugins.git.UserRemoteConfig>
+			<url>{TESTPROJECT_REPOSITORY}</url>
+		</hudson.plugins.git.UserRemoteConfig>
+	</userRemoteConfigs>
+	<branches>
+		<hudson.plugins.git.BranchSpec>
+			<name>*/{TESTPROJECT_BRANCH}</name>
+		</hudson.plugins.git.BranchSpec>
+	</branches>
+	<doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+	<submoduleCfg class="list"/>
+	<extensions>
+		<hudson.plugins.git.extensions.impl.RelativeTargetDirectory>
+			<relativeTargetDir>{SUBDIRECTORY_NAME}</relativeTargetDir>
+		</hudson.plugins.git.extensions.impl.RelativeTargetDirectory>
+	</extensions>
+</hudson.plugins.git.GitSCM>
+</root>
