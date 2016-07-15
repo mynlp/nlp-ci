@@ -34,9 +34,6 @@ def _setup_apache2(address):
     sudo('mv /tmp/default-ssl.conf /etc/apache2/sites-available/default-ssl.conf')
     sudo('apache2ctl restart')
 
-def _install_jenkins_plugin(name, address):
-    sudo('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s//jenkins install-plugin %s' % (address, name))
-
 def _send_jenkins_cli_command(command, iterate = 100):
     count = 0
     with warn_only():
