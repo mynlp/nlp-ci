@@ -65,6 +65,9 @@ def install(username='admin', password='admin', domain=None, sslpath=None):
     sudo('apt-get -q update')
     sudo('apt-get install -y -q openjdk-7-jre openjdk-7-jdk wget docker.io git maven')
 
+    # install IPA font
+    sudo('apt-get install fonts-ipafont-gothic fonts-ipafont-mincho')
+
     # install jenkins
     run('wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add -')
     sudo('sh -c \'echo deb http://pkg.jenkins-ci.org/debian binary/ > /etc/apt/sources.list.d/jenkins.list\'')
