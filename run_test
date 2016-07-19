@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
     work_dir = '/work'
     data_dir = '/data'
-    bin_dir = '/bin'
+    bin_dir = work_dir + '/bin'
 
     # Make an image
     res = call(['docker', 'build', '-t', name, '.'])
