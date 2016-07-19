@@ -37,7 +37,7 @@ def _setup_apache2(address):
 def _send_jenkins_cli_command(command, iterate = 100):
     count = 0
     with warn_only():
-        resuolt = sudo(command)
+        result = sudo(command)
         with hide('everything'):
             while count < iterate and result.return_code != 0:
                 result = sudo(command)
