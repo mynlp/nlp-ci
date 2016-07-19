@@ -54,12 +54,10 @@ def install(username='admin', password='admin', domain=None, sslpath=None):
     sudo('dpkg-reconfigure --frontend noninteractive tzdata')
 
     # install apache2
-    if domain is None:
-        sudo('echo "export LANG=C" > /etc/profile')
-        output = run('ifconfig eth0 | grep "inet addr:" | cut -d: -f2')
-        address = output.split(' ')[0].strip()
-    else:
-        address = domain
+    sudo('echo "export LANG=C" > /etc/profile')
+    output = run('ifconfig eth0 | grep "inet addr:" | cut -d: -f2')
+    privateIP = output.split(' ')[0].strip()
+    address = domain
 
     _setup_apache2(address)
 
@@ -102,7 +100,7 @@ def install(username='admin', password='admin', domain=None, sslpath=None):
     with warn_only():
         with hide('everything'):
             while 1:
-                result = sudo('wget -nv --no-check-certificate -P /tmp/ https://%s/jenkins/jnlpJars/jenkins-cli.jar' % address)
+                result = sudo('wget -nv --no-check-certificate -P /tmp/ https://%s/jenkins/jnlpJars/jenkins-cli.jar' % privateIP)
                 if result.return_code != 0:
                     print 'Waiting for Jenkins to restart ...'
                     sleep(1)
@@ -111,10 +109,10 @@ def install(username='admin', password='admin', domain=None, sslpath=None):
 
     # add admin user
     _send_jenkins_cli_command('echo \'jenkins.model.Jenkins.instance.securityRealm.createAccount("%s","%s") \' \
-    | java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s/jenkins groovy =' % (username, password, address))
+    | java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s/jenkins groovy =' % (username, password, privateIP))
 
     # install plugins
-    _send_jenkins_cli_command('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s//jenkins install-plugin %s' % (address,' '.join(plugins)))
+    _send_jenkins_cli_command('java -jar /tmp/jenkins-cli.jar -noCertificateCheck -s https://%s//jenkins install-plugin %s' % (privateIP,' '.join(plugins)))
 
     # deny access as anonymous
     sudo('/usr/local/bin/edit_jenkins_config /var/lib/jenkins/config.xml')
