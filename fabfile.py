@@ -131,9 +131,8 @@ def install(username='admin', password='admin', domain=None, sslpath=None):
 
     # copy whatswrong_command, which is a helper tool to compare files using whatswrong
     sudo('git clone https://github.com/mynlp/whatswrong_command.git /tmp/whatswrong_command')
-    cd('/tmp/whatswrong_command')
-    sudo('mvn assembly:assembly')
-    sudo('mv ./target/*.jar /usr/local/bin/.')
+    sudo('cd /tmp/whatswrong_command ; mvn assembly:assembly')
+    sudo('mv /tmp/whatswrong_command//target/*.jar /usr/local/bin/.')
 
     # make data directory
     sudo('mkdir -p /data')
@@ -173,6 +172,7 @@ def createjobs(username='admin', password='admin', domain=None):
             testnode.find('.//url').text = subelem['repository']
             testnode.find('.//name').text = '*/' + subelem['branch']
             testnode.find('.//relativeTargetDir').text = title + '-' + subelem['branch']
+            jobxmlnode.append(testnode)
 
         jobxml.write('./xml/%s.xml' % title, encoding='UTF-8')
 
