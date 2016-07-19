@@ -55,6 +55,7 @@ This script is tested on Ubuntu 14.04. It is recommended to use these scripts.
 
 ## Documents
 1. [Install Jenkins using Fabric](docs/fabric.md)
+1. [Job list](docs/joblist.md)
 1. [Construction of project](docs/constructionOfProject.md)
 1. [User authentication with OAuth plugin](docs/oauth.md)
 1. [Plotting by each build job](docs/plot.md)
