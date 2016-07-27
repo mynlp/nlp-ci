@@ -5,7 +5,6 @@ import os
 import subprocess
 import sys
 
-
 def get_workspace(args):
     if args.workspace is not None:
         return args.workspace
@@ -21,7 +20,14 @@ def get_comp_dir(args):
         return 'lastSuccessful'
     else:
         assert(False)
-    
+
+def get_jobname(args):
+    if args.jobname is not None:
+        return args.jobname
+    elif 'JOB_NAME' in os.environ:
+        return os.environ('JOB_NAME')
+    else:
+        assert(False)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='helper script to run diff in jenkins')
@@ -32,13 +38,16 @@ if __name__ == '__main__':
     parser.add_argument('--workspace', type=str,
                         help='workspace of jenkins. if not set, use "WORKSPACE" environment variable.')
     parser.add_argument('path', metavar='PATH')
+    parser.add_argument('jobname', metavar='JOB_NAME',type=str,
+                        help='job name of building target. if not set, use "JOB_NAME" environment variable.')
     args = parser.parse_args()
 
     path = args.path
     workspace = get_workspace(args)
     comp = get_comp_dir(args)
+    jobname = get_jobname(args)
 
-    prev = '{0:s}/../{1:s}/archive/{2:s}'.format(workspace, comp, path)
+    prev = '{0:s}/../../jobs/{1:s}/{2:s}/archive/{3:s}'.format(workspace, jobname, comp, path)
     if not os.path.exists(prev):
         sys.stderr.write('previous result is not found: {0:s}\n'.format(prev))
         sys.exit(0)
